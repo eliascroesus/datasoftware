@@ -60,24 +60,43 @@ Next.js 14 (App Router) · TypeScript · Tailwind CSS · Prisma · PostgreSQL.
 
 ## Deploy to Vercel
 
-1. Push this repo to GitHub.
-2. In Vercel → **New Project** → import the repo.
-3. Add a Postgres database (Vercel Postgres, Neon, or Supabase) and copy its
-   connection string.
-4. Set **Environment Variables** in the Vercel project:
+The build runs `prisma migrate deploy` automatically, so your production
+database gets its tables on the **first deploy** — no manual schema step.
+
+1. This branch is already on GitHub. In Vercel → **Add New… → Project** →
+   import `eliascroesus/datasoftware`. (Framework preset: **Next.js** — detected
+   automatically.)
+2. Create a Postgres database and copy its connection string:
+   - **Vercel Postgres** (Storage tab → Create → Postgres), or
+   - **Neon** (neon.tech, free tier), or **Supabase**.
+3. Set **Environment Variables** in the Vercel project (all environments):
    | Key | Value |
    |-----|-------|
    | `DATABASE_URL` | your Postgres connection string |
-   | `CREDENTIALS_SECRET` | 32+ char random string |
-   | `CRON_SECRET` | random string (protects the cron endpoint) |
+   | `CREDENTIALS_SECRET` | 32+ char random string (`openssl rand -hex 32`) |
+   | `CRON_SECRET` | random string (`openssl rand -hex 24`) |
    | `NEXT_PUBLIC_APP_URL` | your production URL (e.g. `https://unived.vercel.app`) |
-5. Deploy. On first deploy, run the schema push against your production DB:
+4. **Deploy.** On first build the schema is created automatically. Open the URL —
+   you'll see the empty-state onboarding; head to **Integrations** to connect
+   your first tool.
+5. (Optional) Seed the rich demo dataset once, from your machine:
    ```bash
-   DATABASE_URL="<prod url>" npx prisma db push
+   DATABASE_URL="<prod url>" npm run db:seed
    ```
-   (or add it to a build/release step). Optionally seed demo data the same way.
-6. `vercel.json` already registers a cron job that syncs every source on a
-   schedule. Vercel injects `CRON_SECRET` as the `Authorization` header.
+6. `vercel.json` registers a cron job that syncs every source on a schedule.
+   Vercel injects `CRON_SECRET` as the `Authorization` header automatically.
+
+> **Pooled connections:** if `DATABASE_URL` points at a connection pooler
+> (Supabase pgBouncer, Neon `-pooler`), migrations may need the **direct**
+> connection. Easiest fix: use the direct (non-pooled) URL for `DATABASE_URL`.
+
+### Deploying from the CLI instead
+```bash
+npm i -g vercel
+vercel link        # pick/create the project
+vercel env add DATABASE_URL        # repeat for the other vars
+vercel --prod
+```
 
 ---
 
