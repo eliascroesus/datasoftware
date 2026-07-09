@@ -70,12 +70,17 @@ database gets its tables on the **first deploy** — no manual schema step.
    - **Vercel Postgres** (Storage tab → Create → Postgres), or
    - **Neon** (neon.tech, free tier), or **Supabase**.
 3. Set **Environment Variables** in the Vercel project (all environments):
-   | Key | Value |
-   |-----|-------|
-   | `DATABASE_URL` | your Postgres connection string |
-   | `CREDENTIALS_SECRET` | 32+ char random string (`openssl rand -hex 32`) |
-   | `CRON_SECRET` | random string (`openssl rand -hex 24`) |
-   | `NEXT_PUBLIC_APP_URL` | your production URL (e.g. `https://unived.vercel.app`) |
+   | Key | Required | Value |
+   |-----|----------|-------|
+   | `DATABASE_URL` | ✅ | your Postgres connection string |
+   | `CREDENTIALS_SECRET` | ✅ | 32+ char random string (`openssl rand -hex 32`) |
+   | `AUTH_PASSWORD` | ✅ | the password required to sign in |
+   | `CRON_SECRET` | ✅ | random string (`openssl rand -hex 24`) |
+   | `NEXT_PUBLIC_APP_URL` | recommended | your production URL (e.g. `https://unived.vercel.app`) |
+   | `AUTH_SECRET` | optional | signs the session cookie; defaults to `CREDENTIALS_SECRET` |
+
+   > Without `AUTH_PASSWORD` the app is **publicly reachable** and shows a warning
+   > banner. Set it to turn on the login wall.
 4. **Deploy.** On first build the schema is created automatically. Open the URL —
    you'll see the empty-state onboarding; head to **Integrations** to connect
    your first tool.

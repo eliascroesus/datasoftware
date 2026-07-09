@@ -10,6 +10,7 @@ import {
   Activity,
   Plus,
   Layers,
+  LogOut,
 } from "lucide-react";
 import { ProviderIcon } from "./ProviderIcon";
 import { StatusPill } from "./StatusPill";
@@ -30,9 +31,14 @@ const NAV = [
   { href: "/activity", label: "Activity feed", icon: Activity },
 ];
 
-export function Sidebar() {
+export function Sidebar({ showSignOut = false }: { showSignOut?: boolean }) {
   const pathname = usePathname();
   const [sources, setSources] = useState<SourceLite[]>([]);
+
+  async function signOut() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    window.location.href = "/login";
+  }
 
   useEffect(() => {
     let active = true;
@@ -140,10 +146,15 @@ export function Sidebar() {
         )}
       </nav>
 
-      <div className="border-t border-panel-border p-3">
+      <div className="space-y-2 border-t border-panel-border p-3">
         <Link href="/integrations" className="btn-primary w-full">
           <Plus size={16} /> Add integration
         </Link>
+        {showSignOut ? (
+          <button onClick={signOut} className="btn-ghost w-full text-muted">
+            <LogOut size={15} /> Sign out
+          </button>
+        ) : null}
       </div>
     </aside>
   );
