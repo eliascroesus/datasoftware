@@ -1,0 +1,130 @@
+// Unified data-tracking platform schema.
+// One database, many sources: every external tool (Close, Calendly, SendBlue,
+// Instantly, Google Sheets, Webhooks) becomes an `Integration`. Data pulled or
+// pushed from a source lands as time-stamped `DataPoint`s (numeric series) and
+// `EventRecord`s (row-level records). `MetricDefinition`s describe configurable
+// tracking rules that turn raw records into the numbers shown on the dashboard.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  SYNCING
+}
+
+enum SyncStatus {
+  SUCCESS
+  ERROR
+  RUNNING
+}
+
+model Integration {
+  id           String            @id @default(cuid())
+  // Connector type key, e.g. "close", "calendly", "sendblue", "instantly",
+  // "google_sheets", "webhook".
+  provider     String
+  name         String
+  status       IntegrationStatus @default(DISCONNECTED)
+  // Encrypted JSON blob holding API keys / tokens for this integration.
+  credentials  String?
+  // Non-secret configuration (selected campaign ids, sheet ids, column maps).
+  config       Json              @default("{}")
+  // Random token used to build the inbound webhook URL for this integration.
+  webhookToken String            @unique @default(cuid())
+  lastSyncedAt DateTime?
+  lastError    String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  dataPoints DataPoint[]
+  events     EventRecord[]
+  syncRuns   SyncRun[]
+  metrics    MetricDefinition[]
+
+  @@index([provider])
+}
+
+// Time-series numeric samples. Each row is "metric X for integration Y had
+// value V at time T". Powers the sparklines and trend charts.
+model DataPoint {
+  id            String      @id @default(cuid())
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  // Stable key for the series, e.g. "sms_sent", "reply_rate", "bookings".
+  metricKey     String
+  value         Float
+  timestamp     DateTime    @default(now())
+  meta          Json        @default("{}")
+
+  @@index([integrationId, metricKey, timestamp])
+}
+
+// Row-level records: one lead, one booking, one SMS, one spreadsheet row, one
+// webhook payload. Configurable metrics are computed by filtering / counting
+// these. `externalId` dedupes across repeated syncs.
+model EventRecord {
+  id            String      @id @default(cuid())
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  // Kind of record, e.g. "lead", "booking", "sms", "email", "sheet_row".
+  kind          String
+  externalId    String?
+  title         String?
+  // Arbitrary structured payload — the raw fields from the source.
+  data          Json        @default("{}")
+  occurredAt    DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+
+  @@unique([integrationId, kind, externalId])
+  @@index([integrationId, kind, occurredAt])
+}
+
+// A configurable tracking rule. Turns records into a single number using an
+// aggregation + optional filter (e.g. "count sheet_row where column
+// 'Booked' = 'Yes'", or "reply_rate = replies / sent * 100").
+model MetricDefinition {
+  id            String       @id @default(cuid())
+  integrationId String?
+  integration   Integration? @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  key           String       @unique
+  label         String
+  // "count" | "sum" | "avg" | "ratio" | "unique" | "latest"
+  aggregation   String       @default("count")
+  // Which EventRecord.kind this metric reads from.
+  recordKind    String       @default("sheet_row")
+  // JSON: { field, op, value } filters (all must match).
+  filters       Json         @default("[]")
+  // For sum/avg/ratio: the field(s) to read numeric values from.
+  valueField    String?
+  ratioField    String?
+  unit          String       @default("count") // "count" | "percent" | "currency"
+  format        String       @default("number")
+  goal          Float?
+  color         String       @default("brand")
+  pinned        Boolean      @default(true)
+  sortOrder     Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model SyncRun {
+  id            String      @id @default(cuid())
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  status        SyncStatus  @default(RUNNING)
+  recordsPulled Int         @default(0)
+  message       String?
+  startedAt     DateTime    @default(now())
+  finishedAt    DateTime?
+
+  @@index([integrationId, startedAt])
+}

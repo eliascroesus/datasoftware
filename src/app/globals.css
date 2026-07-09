@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+@layer base {
+  html,
+  body {
+    @apply bg-bg text-slate-100 antialiased;
+    font-family: var(--font-sans);
+  }
+  body {
+    background-image:
+      radial-gradient(1200px 600px at 15% -10%, rgba(61, 125, 255, 0.16), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(45, 212, 191, 0.1), transparent 55%),
+      linear-gradient(180deg, #070b1a 0%, #060912 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  * {
+    border-color: theme("colors.panel.border");
+  }
+  ::selection {
+    background: rgba(77, 139, 255, 0.35);
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-xl2 border border-panel-border bg-panel shadow-card backdrop-blur-xl;
+  }
+  .panel-hover {
+    @apply transition-all duration-200 hover:border-brand/40 hover:shadow-glow;
+  }
+  .stat-value {
+    @apply text-2xl font-semibold tracking-tight text-white sm:text-[28px];
+  }
+  .label-muted {
+    @apply text-[13px] font-medium text-muted;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-panel-border bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-muted;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-brand text-white shadow-[0_8px_20px_-8px_rgba(61,125,255,0.7)] hover:bg-brand-soft;
+  }
+  .btn-ghost {
+    @apply btn border border-panel-border bg-white/[0.02] text-slate-200 hover:bg-white/[0.06];
+  }
+  .btn-danger {
+    @apply btn border border-bad/30 bg-bad/10 text-bad hover:bg-bad/20;
+  }
+  .input {
+    @apply w-full rounded-lg border border-panel-border bg-bg-soft/70 px-3 py-2 text-sm text-slate-100 placeholder:text-faint outline-none transition focus:border-brand/60 focus:ring-2 focus:ring-brand/20;
+  }
+  .gradient-text {
+    @apply bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent;
+  }
+}
+
+/* Slim scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(120, 140, 200, 0.18);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 140, 200, 0.3);
+  background-clip: padding-box;
+}
