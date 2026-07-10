@@ -205,6 +205,19 @@ function ConnectModal({
             />
           ) : (
             <>
+              {connector.provider === "google_sheets" ? (
+                <div className="rounded-lg border border-amber/25 bg-amber/10 p-3 text-xs text-amber">
+                  <span className="font-semibold">
+                    Want 1-click Google sign-in?
+                  </span>{" "}
+                  Set <code className="rounded bg-black/30 px-1">GOOGLE_CLIENT_ID</code>{" "}
+                  and{" "}
+                  <code className="rounded bg-black/30 px-1">GOOGLE_CLIENT_SECRET</code>{" "}
+                  in your environment, then <b>redeploy</b>. Env vars only apply to
+                  new deployments. The form below is the manual fallback.
+                </div>
+              ) : null}
+
               {connector.credentialFields.length > 0 ? (
                 <div className="space-y-3">
                   <div className="text-xs font-semibold uppercase tracking-wider text-faint">
