@@ -22,6 +22,10 @@ export interface ComputedMetric {
   format: string;
   color: string;
   goal: number | null;
+  goalPeriod: string | null;
+  belowColor: string | null;
+  goalActual: number | null;
+  underGoal: boolean;
   pinned: boolean;
   aggregation: string;
   recordKind: string;
@@ -30,6 +34,20 @@ export interface ComputedMetric {
   previous: number | null;
   change: number | null;
   trend: TrendPoint[];
+}
+
+// Start of the current goal period (Monday-based week).
+function periodStart(period: string): Date {
+  const d = new Date();
+  if (period === "week") {
+    const day = d.getDay();
+    const diff = (day + 6) % 7; // days since Monday
+    d.setDate(d.getDate() - diff);
+  } else if (period === "month") {
+    d.setDate(1);
+  }
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 interface RecordLite {
@@ -195,6 +213,8 @@ export async function computeMetric(
     format: def.format,
     color: def.color,
     goal: def.goal,
+    goalPeriod: def.goalPeriod ?? null,
+    belowColor: def.belowColor ?? null,
     pinned: def.pinned,
     aggregation: def.aggregation,
     recordKind: def.recordKind,
@@ -240,12 +260,15 @@ export async function computeMetric(
     } else {
       previous = trend.length ? trend[0].v : null;
     }
+    const roundedVal = round(value, 2);
     return {
       ...base,
-      value: round(value, 2),
+      value: roundedVal,
       previous,
       change: previous !== null ? pctChange(value, previous) : null,
       trend,
+      goalActual: def.goal != null ? roundedVal : null,
+      underGoal: def.goal != null && roundedVal < def.goal,
     };
   }
 
@@ -330,12 +353,27 @@ export async function computeMetric(
     previous = trend.length ? trend[0].v : null;
   }
 
+  // Goal progress — measured over the goal period (this week/day/month) when
+  // set, so "30 booked leads per week" counts this week's records.
+  let goalActual: number | null = null;
+  let underGoal = false;
+  if (def.goal != null) {
+    if (def.goalPeriod) {
+      goalActual = aggBetween(periodStart(def.goalPeriod).getTime(), Date.now());
+    } else {
+      goalActual = round(value, 2);
+    }
+    underGoal = goalActual < def.goal;
+  }
+
   return {
     ...base,
     value: round(value, 2),
     previous,
     change: previous !== null ? pctChange(value, previous) : null,
     trend,
+    goalActual,
+    underGoal,
   };
 }
 

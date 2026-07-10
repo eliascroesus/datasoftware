@@ -53,6 +53,8 @@ export interface MetricDef {
   format: string;
   color: string;
   goal: number | null;
+  goalPeriod: string | null;
+  belowColor: string | null;
   pinned: boolean;
   sortOrder: number;
 }

@@ -42,7 +42,44 @@ const OPS = [
   { value: "in", label: "is any of" },
 ];
 const COLORS = ["brand", "teal", "violet", "amber", "pink", "good"];
+const BELOW_COLORS = ["bad", "amber", "pink", "violet"];
+const SWATCH: Record<string, string> = {
+  brand: "#4f8bff",
+  teal: "#2dd4bf",
+  violet: "#8b7cff",
+  amber: "#fbbf24",
+  pink: "#f472b6",
+  good: "#34d399",
+  bad: "#fb7185",
+};
 const NO_VALUE_OPS = new Set(["empty", "not_empty", "exists"]);
+
+function Swatches({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (c: string) => void;
+  options: string[];
+}) {
+  return (
+    <div className="flex gap-2 pt-1">
+      {options.map((c) => (
+        <button
+          key={c}
+          type="button"
+          onClick={() => onChange(c)}
+          className={
+            "h-7 w-7 rounded-full border-2 transition " +
+            (value === c ? "border-white" : "border-transparent")
+          }
+          style={{ background: SWATCH[c] ?? "#4f8bff" }}
+        />
+      ))}
+    </div>
+  );
+}
 
 interface FilterRow {
   field: string;
@@ -60,6 +97,8 @@ interface FormState {
   unit: string;
   color: string;
   goal: string;
+  goalPeriod: string;
+  belowColor: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -72,6 +111,8 @@ const EMPTY_FORM: FormState = {
   unit: "count",
   color: "brand",
   goal: "",
+  goalPeriod: "",
+  belowColor: "bad",
 };
 
 export function MetricsClient({
@@ -191,6 +232,8 @@ export function MetricsClient({
             unit: form.aggregation === "ratio" ? "percent" : form.unit,
             color: form.color,
             goal: form.goal ? Number(form.goal) : null,
+            goalPeriod: form.goalPeriod || null,
+            belowColor: form.belowColor || null,
           }),
         });
         const data = await res.json();
@@ -228,6 +271,8 @@ export function MetricsClient({
       format: form.aggregation === "ratio" ? "percent" : form.unit,
       color: form.color,
       goal: form.goal ? Number(form.goal) : null,
+      goalPeriod: form.goalPeriod || null,
+      belowColor: form.belowColor || null,
       pinned: true,
     };
     try {
@@ -263,6 +308,8 @@ export function MetricsClient({
       unit: m.unit,
       color: m.color,
       goal: m.goal != null ? String(m.goal) : "",
+      goalPeriod: m.goalPeriod ?? "",
+      belowColor: m.belowColor ?? "bad",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -520,43 +567,56 @@ export function MetricsClient({
               <span className="mb-1.5 block text-sm font-medium text-slate-200">
                 Goal (optional)
               </span>
-              <input
-                className="input"
-                type="number"
-                placeholder="e.g. 100"
-                value={form.goal}
-                onChange={(e) => update({ goal: e.target.value })}
-              />
+              <div className="flex gap-2">
+                <input
+                  className="input"
+                  type="number"
+                  placeholder="e.g. 30"
+                  value={form.goal}
+                  onChange={(e) => update({ goal: e.target.value })}
+                />
+                <select
+                  className="input w-32 shrink-0"
+                  value={form.goalPeriod}
+                  onChange={(e) => update({ goalPeriod: e.target.value })}
+                >
+                  <option value="">total</option>
+                  <option value="day">per day</option>
+                  <option value="week">per week</option>
+                  <option value="month">per month</option>
+                </select>
+              </div>
+              {form.goal ? (
+                <p className="mt-1 text-[11px] text-faint">
+                  Counts {form.goalPeriod ? `this ${form.goalPeriod}` : "in total"}{" "}
+                  toward the goal.
+                </p>
+              ) : null}
             </label>
             <div>
               <span className="mb-1.5 block text-sm font-medium text-slate-200">
-                Colour
+                Graph colour
               </span>
-              <div className="flex gap-2 pt-1">
-                {COLORS.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => update({ color: c })}
-                    className={cn(
-                      "h-7 w-7 rounded-full border-2 transition",
-                      form.color === c ? "border-white" : "border-transparent",
-                    )}
-                    style={{
-                      background:
-                        {
-                          brand: "#4f8bff",
-                          teal: "#2dd4bf",
-                          violet: "#8b7cff",
-                          amber: "#fbbf24",
-                          pink: "#f472b6",
-                          good: "#34d399",
-                        }[c] ?? "#4f8bff",
-                    }}
-                  />
-                ))}
-              </div>
+              <Swatches
+                value={form.color}
+                onChange={(c) => update({ color: c })}
+                options={COLORS}
+              />
             </div>
           </div>
+
+          {form.goal ? (
+            <div>
+              <span className="mb-1.5 block text-sm font-medium text-slate-200">
+                Colour when below goal
+              </span>
+              <Swatches
+                value={form.belowColor}
+                onChange={(c) => update({ belowColor: c })}
+                options={BELOW_COLORS}
+              />
+            </div>
+          ) : null}
 
           <div className="flex justify-end border-t border-panel-border pt-4">
             <button

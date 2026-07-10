@@ -21,6 +21,8 @@ export async function PATCH(
       "format",
       "color",
       "goal",
+      "goalPeriod",
+      "belowColor",
       "pinned",
       "sortOrder",
       "integrationId",

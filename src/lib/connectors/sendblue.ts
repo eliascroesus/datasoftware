@@ -37,6 +37,7 @@ export const sendblueConnector: Connector = {
   defaultMetrics: [
     { key: "sendblue_sent", label: "SMS sent", aggregation: "count", recordKind: "sms", filters: [{ field: "direction", op: "eq", value: "outbound" }], unit: "count", color: "violet" },
     { key: "sendblue_received", label: "SMS received", aggregation: "count", recordKind: "sms", filters: [{ field: "direction", op: "eq", value: "inbound" }], unit: "count", color: "teal" },
+    { key: "sendblue_repliers", label: "People who replied", aggregation: "unique", recordKind: "sms", valueField: "contact", filters: [{ field: "direction", op: "eq", value: "inbound" }], unit: "count", color: "amber" },
     { key: "sendblue_reply_rate", label: "Reply rate", aggregation: "latest", recordKind: "series", valueField: "sendblue_reply_rate", unit: "percent", color: "brand" },
   ],
 
@@ -53,31 +54,52 @@ export const sendblueConnector: Connector = {
     };
   },
 
-  async handleWebhook(body, _headers, ctx): Promise<SyncResult> {
-    // SendBlue webhook payload fields.
+  async handleWebhook(body, _headers, _ctx): Promise<SyncResult> {
+    // SendBlue posts inbound messages and outbound status callbacks to the same
+    // URL. Detect direction robustly from is_outbound / direction / status.
+    const status = String(body?.status ?? "").toUpperCase();
+    const outboundStatuses = new Set([
+      "SENT",
+      "DELIVERED",
+      "QUEUED",
+      "SENDING",
+      "DISPATCHED",
+    ]);
     const isOutbound =
       body?.is_outbound === true ||
       body?.direction === "outbound" ||
-      body?.from_number === ctx.config.fromNumber;
-    const direction = isOutbound ? "outbound" : "inbound";
-    const handle = body?.message_handle ?? body?.id ?? undefined;
+      (body?.is_outbound === undefined && outboundStatuses.has(status));
+    const isInbound =
+      body?.is_outbound === false ||
+      body?.direction === "inbound" ||
+      status === "RECEIVED";
+    const direction = isOutbound && !isInbound ? "outbound" : "inbound";
+
+    // The contact (lead) is the other party — used to count unique repliers.
+    const contact = isOutbound
+      ? body?.to_number ?? body?.number
+      : body?.from_number ?? body?.number;
+    const handle =
+      body?.message_handle ?? body?.id ?? `${contact}-${body?.date_sent ?? Date.now()}`;
 
     const events = [
       {
         kind: "sms",
-        externalId: handle,
+        externalId: String(handle),
         title:
-          (isOutbound ? "→ " : "← ") +
-          (body?.to_number ?? body?.from_number ?? "message"),
+          (direction === "outbound" ? "→ " : "← ") +
+          (contact ?? "message") +
+          (body?.content ? `: ${String(body.content).slice(0, 40)}` : ""),
         occurredAt: new Date(body?.date_sent ?? body?.date_created ?? Date.now()),
         data: {
           direction,
-          status: body?.status,
-          content: body?.content,
-          from_number: body?.from_number,
-          to_number: body?.to_number,
-          is_outbound: isOutbound,
-          media_url: body?.media_url,
+          contact: contact ?? "",
+          status: body?.status ?? (direction === "inbound" ? "received" : "sent"),
+          content: body?.content ?? "",
+          from_number: body?.from_number ?? "",
+          to_number: body?.to_number ?? "",
+          message_type: body?.message_type ?? (body?.media_url ? "media" : "text"),
+          media_url: body?.media_url ?? "",
         },
       },
     ];
@@ -85,7 +107,7 @@ export const sendblueConnector: Connector = {
     return {
       dataPoints: [],
       events,
-      message: `SendBlue ${direction} message (${body?.status ?? "received"})`,
+      message: `SendBlue ${direction} message (${status || "received"})`,
     };
   },
 };

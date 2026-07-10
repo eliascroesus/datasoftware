@@ -109,7 +109,11 @@ model MetricDefinition {
   unit          String       @default("count") // "count" | "percent" | "currency"
   format        String       @default("number")
   goal          Float?
+  // "day" | "week" | "month" | null — the period the goal applies to.
+  goalPeriod    String?
   color         String       @default("brand")
+  // Colour used on the card when the goal-period value is below the goal.
+  belowColor    String?
   pinned        Boolean      @default(true)
   sortOrder     Int          @default(0)
   createdAt     DateTime     @default(now())

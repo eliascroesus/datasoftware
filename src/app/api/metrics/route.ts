@@ -41,6 +41,8 @@ export async function POST(req: NextRequest) {
         format: body.format || "number",
         color: body.color || "brand",
         goal: body.goal ?? null,
+        goalPeriod: body.goalPeriod || null,
+        belowColor: body.belowColor || null,
         pinned: body.pinned ?? true,
         sortOrder: body.sortOrder ?? 100,
       },
