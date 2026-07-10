@@ -173,10 +173,10 @@ export const googleSheetsConnector: Connector = {
       defaultValue: true,
     },
     {
-      key: "keyColumn",
-      label: "Unique key column",
+      key: "dateColumn",
+      label: "Date column (optional)",
       type: "text",
-      help: "Column used to de-duplicate rows across syncs (e.g. 'Email'). Optional.",
+      help: "Column holding a date/time (e.g. 'timestamp') used to place rows on the timeline. Auto-detected if left blank. Every row is always tracked.",
     },
   ],
   defaultMetrics: [
@@ -199,7 +199,6 @@ export const googleSheetsConnector: Connector = {
   async sync(ctx): Promise<SyncResult> {
     const values = await readValues(ctx);
     const hasHeader = ctx.config.hasHeader !== false;
-    const keyColumn = ctx.config.keyColumn as string | undefined;
     const { headers, rows } = rowsToObjects(values, hasHeader);
 
     // Ignore fully-empty rows so trailing blanks don't inflate counts.
@@ -219,10 +218,10 @@ export const googleSheetsConnector: Connector = {
       );
 
     const events = nonEmpty.map((row, i) => {
-      const externalId =
-        keyColumn && row[keyColumn] ? String(row[keyColumn]) : `row_${i + 1}`;
-      const title =
-        row[headers[0]] || (keyColumn && row[keyColumn]) || `Row ${i + 1}`;
+      // With full-replace, each row is keyed by its position — this guarantees
+      // every row is stored (no collapsing on a repeated column value).
+      const externalId = `row_${i + 1}`;
+      const title = row[headers[0]] || `Row ${i + 1}`;
       let occurredAt = now;
       if (dateColumn && row[dateColumn]) {
         const parsed = new Date(row[dateColumn]);

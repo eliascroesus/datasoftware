@@ -50,7 +50,7 @@ export function GoogleSheetsSetup({
   const selectedSheetId = config.spreadsheetId as string | undefined;
   const selectedSheetName = config.spreadsheetName as string | undefined;
   const selectedTab = config.range as string | undefined;
-  const keyColumn = config.keyColumn as string | undefined;
+  const dateColumn = config.dateColumn as string | undefined;
 
   const api = useCallback(
     async (action: string, extra: Record<string, string> = {}) => {
@@ -306,20 +306,24 @@ export function GoogleSheetsSetup({
               </div>
               <label className="block">
                 <span className="mb-1.5 block text-xs font-medium text-muted">
-                  Unique row key (for de-duplication)
+                  Date column for the timeline (optional)
                 </span>
                 <select
                   className="input"
-                  value={keyColumn ?? ""}
-                  onChange={(e) => onConfig({ keyColumn: e.target.value })}
+                  value={dateColumn ?? ""}
+                  onChange={(e) => onConfig({ dateColumn: e.target.value })}
                 >
-                  <option value="">Row number (default)</option>
+                  <option value="">Auto-detect / sync time</option>
                   {columns.map((c) => (
                     <option key={c} value={c}>
                       {c}
                     </option>
                   ))}
                 </select>
+                <p className="mt-1 text-[11px] text-faint">
+                  Used to place rows on the Today / 7-day / 30-day timeline. Every
+                  row is always tracked.
+                </p>
               </label>
             </>
           )}
