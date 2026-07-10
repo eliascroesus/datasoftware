@@ -202,27 +202,50 @@ export const googleSheetsConnector: Connector = {
     const keyColumn = ctx.config.keyColumn as string | undefined;
     const { headers, rows } = rowsToObjects(values, hasHeader);
 
+    // Ignore fully-empty rows so trailing blanks don't inflate counts.
+    const nonEmpty = rows.filter((r) =>
+      Object.values(r).some((v) => String(v ?? "").trim() !== ""),
+    );
+
     const now = new Date();
-    const events = rows.map((row, i) => {
+    // Use a real date column for the timeline when one is present, so metrics
+    // like "bookings today / last 7 days" reflect the data, not the sync time.
+    const dateColumn =
+      (ctx.config.dateColumn as string) ||
+      headers.find((h) =>
+        /^(timestamp|date|datetime|created|created_at|createdon|scheduled_call|meeting_date_time|booked_at|submitted_at)$/i.test(
+          h.trim(),
+        ),
+      );
+
+    const events = nonEmpty.map((row, i) => {
       const externalId =
         keyColumn && row[keyColumn] ? String(row[keyColumn]) : `row_${i + 1}`;
       const title =
         row[headers[0]] || (keyColumn && row[keyColumn]) || `Row ${i + 1}`;
+      let occurredAt = now;
+      if (dateColumn && row[dateColumn]) {
+        const parsed = new Date(row[dateColumn]);
+        if (!Number.isNaN(parsed.getTime())) occurredAt = parsed;
+      }
       return {
         kind: "sheet_row",
         externalId,
         title: String(title),
-        occurredAt: now,
+        occurredAt,
         data: { ...row, _rowIndex: i + 1 },
       };
     });
 
     return {
       dataPoints: [
-        { metricKey: "sheet_total_rows", value: rows.length, timestamp: now },
+        { metricKey: "sheet_total_rows", value: nonEmpty.length, timestamp: now },
       ],
       events,
-      message: `Synced ${rows.length} rows across ${headers.length} columns.`,
+      // The sheet is the source of truth — replace prior rows entirely so
+      // deleted rows disappear and counts always match the spreadsheet.
+      replace: true,
+      message: `Synced ${nonEmpty.length} rows across ${headers.length} columns.`,
     };
   },
 

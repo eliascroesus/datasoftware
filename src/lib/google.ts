@@ -64,7 +64,8 @@ export function buildAuthUrl(state: string): string {
     scope: GOOGLE_SCOPES,
     access_type: "offline",
     include_granted_scopes: "true",
-    prompt: "consent",
+    // Always show the account chooser so users can connect a different account.
+    prompt: "select_account consent",
     state,
   });
   return `${AUTH_URL}?${params.toString()}`;

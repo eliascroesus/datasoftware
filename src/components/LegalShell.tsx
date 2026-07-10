@@ -17,8 +17,8 @@ export function LegalShell({
       <header className="border-b border-panel-border">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-accent-teal">
-              <Layers size={17} className="text-white" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
+              <Layers size={17} className="text-black" />
             </div>
             <span className="text-[15px] font-bold tracking-tight text-white">
               NamziLabs

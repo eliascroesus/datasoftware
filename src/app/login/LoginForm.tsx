@@ -37,8 +37,8 @@ export function LoginForm({ next }: { next: string }) {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl2 bg-gradient-to-br from-brand to-accent-teal shadow-glow">
-            <Layers className="text-white" />
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl2 bg-white">
+            <Layers className="text-black" />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-white">
             Sign in to NamziLabs

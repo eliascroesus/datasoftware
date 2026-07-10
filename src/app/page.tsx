@@ -41,11 +41,11 @@ const INTEGRATIONS = [
 
 function NavBar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-panel-border/70 bg-bg/70 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-panel-border bg-bg">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-accent-teal shadow-glow">
-            <Layers size={18} className="text-white" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
+            <Layers size={18} className="text-black" />
           </div>
           <span className="text-[15px] font-bold tracking-tight text-white">
             NamziLabs
@@ -178,9 +178,7 @@ export default function LandingPage() {
             </span>
             <h1 className="mt-4 text-4xl font-bold leading-[1.08] tracking-tight text-white sm:text-5xl">
               All your business data in{" "}
-              <span className="bg-gradient-to-r from-brand-soft to-accent-teal bg-clip-text text-transparent">
-                one dashboard
-              </span>
+              <span className="text-zinc-400">one dashboard</span>
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
               NamziLabs connects the tools you already use — Google Sheets, Close
@@ -351,7 +349,7 @@ export default function LandingPage() {
             className="pointer-events-none absolute inset-0 opacity-60"
             style={{
               background:
-                "radial-gradient(500px 200px at 50% 0%, rgba(61,125,255,0.18), transparent 70%)",
+                "radial-gradient(500px 200px at 50% 0%, rgba(255,255,255,0.06), transparent 70%)",
             }}
           />
           <div className="relative">

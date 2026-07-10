@@ -9,30 +9,33 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Monochrome, fully opaque surfaces — no glass/transparency.
         bg: {
-          DEFAULT: "#0a0a0e",
-          soft: "#0e0e13",
-          raise: "#15151b",
+          DEFAULT: "#09090b",
+          soft: "#0d0d0f",
+          raise: "#18181b",
         },
         panel: {
-          DEFAULT: "rgba(255,255,255,0.025)",
-          border: "rgba(255,255,255,0.09)",
+          DEFAULT: "#131316",
+          border: "#27272a",
         },
+        // "brand" now reads as neutral light gray so existing utility classes
+        // stay monochrome.
         brand: {
-          DEFAULT: "#3d7dff",
-          soft: "#6ea8ff",
-          glow: "#4f8bff",
+          DEFAULT: "#a1a1aa",
+          soft: "#e4e4e7",
+          glow: "#3f3f46",
         },
         accent: {
-          teal: "#2dd4bf",
-          violet: "#8b7cff",
-          amber: "#fbbf24",
-          pink: "#f472b6",
+          teal: "#d4d4d8",
+          violet: "#a1a1aa",
+          amber: "#fafafa",
+          pink: "#c4c4c7",
         },
-        good: "#34d399",
-        bad: "#fb7185",
-        muted: "#8a97c2",
-        faint: "#5a6892",
+        good: "#e4e4e7",
+        bad: "#a1a1aa",
+        muted: "#a1a1aa",
+        faint: "#6b6b73",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],

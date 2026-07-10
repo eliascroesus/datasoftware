@@ -42,6 +42,10 @@ export interface SyncResult {
   dataPoints: DataPointInput[];
   events: EventRecordInput[];
   message?: string;
+  // When true, the events represent the COMPLETE current set for the kinds
+  // present, so the orchestrator replaces (deletes + reinserts) prior events of
+  // those kinds. Used by spreadsheet syncs so the DB mirrors the sheet exactly.
+  replace?: boolean;
 }
 
 export interface VerifyResult {

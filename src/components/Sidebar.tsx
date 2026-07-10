@@ -54,10 +54,10 @@ export function Sidebar({ showSignOut = false }: { showSignOut?: boolean }) {
   }, [pathname]);
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-panel-border bg-bg-soft/60 backdrop-blur-xl lg:flex">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-panel-border bg-bg-soft lg:flex">
       <div className="flex h-16 items-center gap-2.5 px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-accent-teal shadow-glow">
-          <Layers size={18} className="text-white" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
+          <Layers size={18} className="text-black" />
         </div>
         <div className="leading-tight">
           <div className="text-[15px] font-bold tracking-tight text-white">
@@ -83,11 +83,11 @@ export function Sidebar({ showSignOut = false }: { showSignOut?: boolean }) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition",
                 active
-                  ? "bg-brand/12 text-white shadow-[inset_0_0_0_1px_rgba(77,139,255,0.25)]"
-                  : "text-muted hover:bg-white/[0.04] hover:text-slate-100",
+                  ? "bg-bg-raise text-white"
+                  : "text-muted hover:bg-bg-raise hover:text-zinc-100",
               )}
             >
-              <Icon size={17} className={active ? "text-brand-soft" : ""} />
+              <Icon size={17} className={active ? "text-white" : ""} />
               {item.label}
             </Link>
           );
@@ -114,17 +114,11 @@ export function Sidebar({ showSignOut = false }: { showSignOut?: boolean }) {
                 className={cn(
                   "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition",
                   active
-                    ? "bg-white/[0.06] text-white"
-                    : "text-muted hover:bg-white/[0.04] hover:text-slate-100",
+                    ? "bg-bg-raise text-white"
+                    : "text-muted hover:bg-bg-raise hover:text-zinc-100",
                 )}
               >
-                <span
-                  className="flex h-6 w-6 items-center justify-center rounded-md"
-                  style={{
-                    background: `${style.color}1f`,
-                    color: style.color,
-                  }}
-                >
+                <span className="flex h-6 w-6 items-center justify-center rounded-md border border-panel-border bg-bg text-zinc-300">
                   <ProviderIcon provider={s.provider} size={13} />
                 </span>
                 <span className="flex-1 truncate">{s.name}</span>
@@ -132,12 +126,12 @@ export function Sidebar({ showSignOut = false }: { showSignOut?: boolean }) {
                   className={cn(
                     "h-1.5 w-1.5 rounded-full",
                     s.status === "CONNECTED"
-                      ? "bg-good"
+                      ? "bg-white"
                       : s.status === "ERROR"
-                        ? "bg-bad"
+                        ? "bg-zinc-600"
                         : s.status === "SYNCING"
-                          ? "bg-brand-soft animate-pulse"
-                          : "bg-faint",
+                          ? "animate-pulse bg-white"
+                          : "bg-zinc-700",
                   )}
                 />
               </Link>

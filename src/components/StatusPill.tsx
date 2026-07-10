@@ -3,23 +3,23 @@ import { cn } from "@/lib/utils";
 const MAP: Record<string, { label: string; cls: string; dot: string }> = {
   CONNECTED: {
     label: "Connected",
-    cls: "text-good bg-good/10 border-good/20",
-    dot: "bg-good",
+    cls: "text-zinc-200 bg-bg-raise border-panel-border",
+    dot: "bg-white",
   },
   SYNCING: {
     label: "Syncing",
-    cls: "text-brand-soft bg-brand/10 border-brand/20",
-    dot: "bg-brand-soft animate-pulse",
+    cls: "text-zinc-200 bg-bg-raise border-panel-border",
+    dot: "bg-white animate-pulse",
   },
   ERROR: {
     label: "Error",
-    cls: "text-bad bg-bad/10 border-bad/20",
-    dot: "bg-bad",
+    cls: "text-zinc-400 bg-bg-raise border-zinc-700",
+    dot: "bg-zinc-500",
   },
   DISCONNECTED: {
     label: "Not connected",
-    cls: "text-faint bg-white/[0.03] border-panel-border",
-    dot: "bg-faint",
+    cls: "text-faint bg-bg-raise border-panel-border",
+    dot: "bg-zinc-700",
   },
 };
 

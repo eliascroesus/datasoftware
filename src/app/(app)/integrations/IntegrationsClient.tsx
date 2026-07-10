@@ -172,7 +172,7 @@ function ConnectModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm sm:p-8">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 p-4 sm:p-8">
       <div className="panel w-full max-w-xl animate-fade-in">
         <div className="flex items-start justify-between gap-3 border-b border-panel-border p-5">
           <div className="flex items-center gap-3">

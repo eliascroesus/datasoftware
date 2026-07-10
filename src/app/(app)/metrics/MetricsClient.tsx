@@ -133,6 +133,23 @@ export function MetricsClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.integrationId]);
 
+  // "Pull latest" actually re-syncs the selected source (fetching fresh rows
+  // from Google/Close/etc.), then refreshes the discovered fields + preview.
+  const pullLatest = useCallback(async () => {
+    setLoadingSchema(true);
+    try {
+      if (form.integrationId) {
+        await fetch(`/api/integrations/${form.integrationId}/sync`, {
+          method: "POST",
+        }).catch(() => {});
+      }
+      await loadSchema(form.integrationId, false);
+      router.refresh();
+    } finally {
+      setLoadingSchema(false);
+    }
+  }, [form.integrationId, loadSchema, router]);
+
   const availableFields = schema.fieldsByKind[form.recordKind] ?? [];
   const availableExamples = schema.examplesByKind[form.recordKind] ?? {};
   const availableValues = schema.valuesByKind[form.recordKind] ?? {};
@@ -585,15 +602,20 @@ export function MetricsClient({
                   <Database size={13} /> Sample data
                 </div>
                 <button
-                  onClick={() => loadSchema(form.integrationId, false)}
+                  onClick={pullLatest}
                   className="btn-ghost px-2 py-1 text-[11px]"
                   disabled={loadingSchema}
+                  title={
+                    form.integrationId
+                      ? "Re-sync this source and refresh fields"
+                      : "Refresh fields"
+                  }
                 >
                   <RefreshCw
                     size={12}
                     className={cn(loadingSchema && "animate-spin")}
                   />
-                  Pull latest
+                  {loadingSchema ? "Syncing…" : "Pull latest"}
                 </button>
               </div>
               {availableFields.length === 0 ? (

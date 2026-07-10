@@ -5,11 +5,21 @@ import { MetricCard } from "@/components/MetricCard";
 import { ProviderBadge } from "@/components/ProviderIcon";
 import { StatusPill } from "@/components/StatusPill";
 import { DashboardActions } from "@/components/DashboardActions";
+import { RangeSelector } from "@/components/RangeSelector";
 import { formatNumber, timeAgo } from "@/lib/utils";
 import { allConnectorMeta } from "@/lib/connectors";
+import type { RangeKey } from "@/lib/metrics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const RANGE_LABEL: Record<string, string> = {
+  today: "today",
+  yesterday: "yesterday",
+  "7d": "last 7 days",
+  "30d": "last 30 days",
+  all: "all time",
+};
 
 function StatTile({
   label,
@@ -24,10 +34,7 @@ function StatTile({
 }) {
   return (
     <div className="panel flex items-center gap-3 p-4">
-      <span
-        className="flex h-10 w-10 items-center justify-center rounded-lg"
-        style={{ background: `${accent}1f`, color: accent }}
-      >
+      <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-panel-border bg-bg-soft text-zinc-300">
         <Icon size={18} />
       </span>
       <div className="min-w-0">
@@ -40,8 +47,16 @@ function StatTile({
   );
 }
 
-export default async function DashboardPage() {
-  const summary = await getSummary();
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { range?: string };
+}) {
+  const validRanges = ["today", "yesterday", "7d", "30d", "all"];
+  const range = (
+    validRanges.includes(searchParams.range ?? "") ? searchParams.range : "30d"
+  ) as RangeKey;
+  const summary = await getSummary(range);
   const { integrations, metrics, byIntegration, totals } = summary;
 
   if (integrations.length === 0) {
@@ -49,8 +64,8 @@ export default async function DashboardPage() {
     return (
       <div className="animate-fade-in">
         <div className="mx-auto max-w-2xl py-10 text-center">
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-accent-teal shadow-glow">
-            <Sparkles className="text-white" />
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white">
+            <Sparkles className="text-black" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
             One dashboard for all your data
@@ -101,12 +116,16 @@ export default async function DashboardPage() {
             Summary
           </h1>
           <p className="mt-1 text-sm text-muted">
-            Live metrics across {totals.sources} source
+            {RANGE_LABEL[range]} · {totals.sources} source
             {totals.sources === 1 ? "" : "s"} · updated {timeAgo(totals.lastSyncedAt)}
           </p>
         </div>
         <DashboardActions />
       </header>
+
+      <div className="flex items-center justify-between gap-3">
+        <RangeSelector current={range} />
+      </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile

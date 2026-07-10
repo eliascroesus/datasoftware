@@ -21,10 +21,10 @@ const NAV = [
 export function MobileNav() {
   const pathname = usePathname();
   return (
-    <div className="sticky top-0 z-30 border-b border-panel-border bg-bg-soft/80 backdrop-blur-xl lg:hidden">
+    <div className="sticky top-0 z-30 border-b border-panel-border bg-bg-soft lg:hidden">
       <div className="flex h-14 items-center gap-2 px-4">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-accent-teal">
-          <Layers size={15} className="text-white" />
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white">
+          <Layers size={15} className="text-black" />
         </div>
         <span className="font-bold text-white">NamziLabs</span>
       </div>
@@ -41,7 +41,7 @@ export function MobileNav() {
               href={item.href}
               className={cn(
                 "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium",
-                active ? "bg-brand/15 text-white" : "text-muted",
+                active ? "bg-bg-raise text-white" : "text-muted",
               )}
             >
               <Icon size={15} />

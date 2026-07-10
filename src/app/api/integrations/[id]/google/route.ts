@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getGoogleAccessToken } from "@/lib/integrations";
+import { getGoogleAccessToken, disconnectGoogle } from "@/lib/integrations";
 import { listSpreadsheets, listTabs, getHeaderColumns } from "@/lib/google";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// Disconnect the Google account (keeps the integration + its metrics).
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  const action = req.nextUrl.searchParams.get("action");
+  if (action === "disconnect") {
+    try {
+      await disconnectGoogle(params.id);
+      return NextResponse.json({ ok: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+  return NextResponse.json({ error: "unknown action" }, { status: 400 });
+}
 
 // Drive/Sheets picker backing the "pick spreadsheet → tab → columns" UI.
 // action=spreadsheets | tabs | columns

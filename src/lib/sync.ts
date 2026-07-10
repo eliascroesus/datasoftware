@@ -38,6 +38,33 @@ async function persistResult(
     });
   }
 
+  // Full-replace mode (spreadsheets): delete prior events of the kinds present
+  // and bulk-insert the current set so the DB mirrors the source exactly.
+  if (result.replace && events.length > 0) {
+    const kinds = Array.from(new Set(events.map((e) => e.kind)));
+    await prisma.eventRecord.deleteMany({
+      where: { integrationId, kind: { in: kinds } },
+    });
+    // De-dupe by (kind, externalId) within the batch to satisfy the unique key.
+    const seen = new Set<string>();
+    const data: any[] = [];
+    for (const e of events) {
+      const key = `${e.kind}::${e.externalId ?? ""}`;
+      if (e.externalId && seen.has(key)) continue;
+      if (e.externalId) seen.add(key);
+      data.push({
+        integrationId,
+        kind: e.kind,
+        externalId: e.externalId ?? null,
+        title: e.title ?? null,
+        data: (e.data ?? {}) as any,
+        occurredAt: e.occurredAt ?? new Date(),
+      });
+    }
+    await prisma.eventRecord.createMany({ data, skipDuplicates: true });
+    return data.length;
+  }
+
   let count = 0;
   for (const e of events as EventRecordInput[]) {
     count++;

@@ -146,12 +146,47 @@ function dayWindows(days: number): Date[] {
   return out;
 }
 
-// Compute a single metric definition into a value + trend + change.
+// Day-end timestamps for each day touched by [from, to].
+function dayEndsBetween(from: Date, to: Date): Date[] {
+  const out: Date[] = [];
+  const cur = new Date(from);
+  cur.setHours(23, 59, 59, 999);
+  while (cur.getTime() <= to.getTime()) {
+    out.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  if (out.length === 0) {
+    const d = new Date(to);
+    d.setHours(23, 59, 59, 999);
+    out.push(d);
+  }
+  return out;
+}
+function dayStart(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+export interface ComputeOpts {
+  days?: number;
+  from?: Date;
+  to?: Date;
+}
+
+// Compute a single metric definition into a value + trend + change. When a
+// { from, to } window is supplied, the value reflects only that window and the
+// change compares against the immediately-preceding window of equal length.
 export async function computeMetric(
   def: MetricDefinition,
-  opts: { days?: number } = {},
+  opts: ComputeOpts = {},
 ): Promise<ComputedMetric> {
   const days = opts.days ?? 14;
+  const windowed = !!opts.from;
+  const to = opts.to ?? new Date();
+  const from = opts.from ?? null;
+  const inWindow = (t: Date) =>
+    !from || (t.getTime() >= from.getTime() && t.getTime() <= to.getTime());
   const base = {
     id: def.id,
     key: def.key,
@@ -177,17 +212,34 @@ export async function computeMetric(
       orderBy: { timestamp: "asc" },
       take: 2000,
     });
-    const windows = dayWindows(days);
-    const trend: TrendPoint[] = windows.map((end) => {
+    const windows = windowed ? dayEndsBetween(from!, to) : dayWindows(days);
+    const lastAtOrBefore = (end: Date) => {
       let last = 0;
       for (const p of points) {
         if (p.timestamp.getTime() <= end.getTime()) last = p.value;
         else break;
       }
-      return { t: end.toISOString().slice(0, 10), v: round(last, 2) };
-    });
-    const value = points.length ? points[points.length - 1].value : 0;
-    const previous = trend.length ? trend[0].v : null;
+      return last;
+    };
+    const trend: TrendPoint[] = windows.map((end) => ({
+      t: end.toISOString().slice(0, 10),
+      v: round(lastAtOrBefore(end), 2),
+    }));
+    const value = windowed ? lastAtOrBefore(to) : points.length ? points[points.length - 1].value : 0;
+    let previous: number | null;
+    if (windowed) {
+      previous = lastAtOrBefore(from!);
+      // If there was no reading yet at the window start, compare against the
+      // first reading inside the window so the change stays meaningful.
+      if (previous === 0) {
+        const firstIn = points.find(
+          (p) => p.timestamp.getTime() >= from!.getTime(),
+        );
+        if (firstIn) previous = firstIn.value;
+      }
+    } else {
+      previous = trend.length ? trend[0].v : null;
+    }
     return {
       ...base,
       value: round(value, 2),
@@ -214,34 +266,70 @@ export async function computeMetric(
   }));
 
   const matching = lite.filter((r) => passesFilters(r, filters));
-
-  let value: number;
-  const windows = dayWindows(days);
-  let trend: TrendPoint[];
-
-  if (def.aggregation === "ratio") {
-    // ratio = matching / denominator * 100
-    const denom = def.ratioField
+  const denomAll =
+    def.aggregation === "ratio" && def.ratioField
       ? lite.filter((r) => toNumber(fieldValue(r, def.ratioField!)) !== null)
       : lite;
-    value = denom.length ? round((matching.length / denom.length) * 100, 1) : 0;
-    trend = windows.map((end) => {
-      const m = matching.filter((r) => r.occurredAt.getTime() <= end.getTime()).length;
-      const d = denom.filter((r) => r.occurredAt.getTime() <= end.getTime()).length;
-      return { t: end.toISOString().slice(0, 10), v: d ? round((m / d) * 100, 1) : 0 };
-    });
+
+  const isRatio = def.aggregation === "ratio";
+
+  // Helper: ratio over a time-bounded subset.
+  const ratioBetween = (lo: number, hi: number) => {
+    const m = matching.filter(
+      (r) => r.occurredAt.getTime() >= lo && r.occurredAt.getTime() <= hi,
+    ).length;
+    const d = denomAll.filter(
+      (r) => r.occurredAt.getTime() >= lo && r.occurredAt.getTime() <= hi,
+    ).length;
+    return d ? round((m / d) * 100, 1) : 0;
+  };
+  const aggBetween = (lo: number, hi: number) => {
+    const subset = matching.filter(
+      (r) => r.occurredAt.getTime() >= lo && r.occurredAt.getTime() <= hi,
+    );
+    return isRatio ? ratioBetween(lo, hi) : aggregate(subset, def.aggregation, def.valueField);
+  };
+
+  let value: number;
+  let trend: TrendPoint[];
+  let previous: number | null;
+
+  if (windowed) {
+    const f = from!.getTime();
+    const t = to.getTime();
+    value = aggBetween(f, t);
+    // Per-day (non-cumulative) trend across the window.
+    trend = dayEndsBetween(from!, to).map((end) => ({
+      t: end.toISOString().slice(0, 10),
+      v: aggBetween(dayStart(end).getTime(), end.getTime()),
+    }));
+    // Compare against the preceding window of equal length.
+    const len = t - f;
+    previous = aggBetween(f - len, f - 1);
   } else {
-    value = aggregate(matching, def.aggregation, def.valueField);
-    trend = windows.map((end) => {
-      const subset = matching.filter((r) => r.occurredAt.getTime() <= end.getTime());
-      return {
-        t: end.toISOString().slice(0, 10),
-        v: aggregate(subset, def.aggregation, def.valueField),
-      };
-    });
+    const windows = dayWindows(days);
+    if (isRatio) {
+      value = denomAll.length
+        ? round((matching.length / denomAll.length) * 100, 1)
+        : 0;
+      trend = windows.map((end) => {
+        const m = matching.filter((r) => r.occurredAt.getTime() <= end.getTime()).length;
+        const d = denomAll.filter((r) => r.occurredAt.getTime() <= end.getTime()).length;
+        return { t: end.toISOString().slice(0, 10), v: d ? round((m / d) * 100, 1) : 0 };
+      });
+    } else {
+      value = aggregate(matching, def.aggregation, def.valueField);
+      trend = windows.map((end) => {
+        const subset = matching.filter((r) => r.occurredAt.getTime() <= end.getTime());
+        return {
+          t: end.toISOString().slice(0, 10),
+          v: aggregate(subset, def.aggregation, def.valueField),
+        };
+      });
+    }
+    previous = trend.length ? trend[0].v : null;
   }
 
-  const previous = trend.length ? trend[0].v : null;
   return {
     ...base,
     value: round(value, 2),
@@ -253,9 +341,40 @@ export async function computeMetric(
 
 export async function computeMetrics(
   defs: MetricDefinition[],
-  opts: { days?: number } = {},
+  opts: ComputeOpts = {},
 ): Promise<ComputedMetric[]> {
   return Promise.all(defs.map((d) => computeMetric(d, opts)));
+}
+
+// Resolve a named range into a { from, to, days } window for computeMetric.
+export type RangeKey = "today" | "yesterday" | "7d" | "30d" | "all";
+export function resolveRange(range: RangeKey): ComputeOpts {
+  const now = new Date();
+  const startToday = new Date(now);
+  startToday.setHours(0, 0, 0, 0);
+  switch (range) {
+    case "today":
+      return { from: startToday, to: now };
+    case "yesterday": {
+      const from = new Date(startToday);
+      from.setDate(from.getDate() - 1);
+      const to = new Date(startToday.getTime() - 1);
+      return { from, to };
+    }
+    case "7d": {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 7);
+      return { from, to: now };
+    }
+    case "30d": {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 30);
+      return { from, to: now };
+    }
+    case "all":
+    default:
+      return { days: 30 };
+  }
 }
 
 // Distinct field/column names seen across a record kind — used to power the

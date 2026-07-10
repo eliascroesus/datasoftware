@@ -106,6 +106,29 @@ export function hasGoogleOAuth(integration: Integration): boolean {
   return !!creds.google_oauth?.refresh_token;
 }
 
+// Disconnect the Google account from an integration (clears the stored token
+// and selected spreadsheet) so the user can reconnect a different account.
+export async function disconnectGoogle(id: string) {
+  const existing = await prisma.integration.findUnique({ where: { id } });
+  if (!existing) throw new Error("Integration not found");
+  const creds = decryptJSON<Record<string, any>>(existing.credentials) ?? {};
+  delete creds.google_oauth;
+  const config = { ...((existing.config as Record<string, any>) ?? {}) };
+  delete config.spreadsheetId;
+  delete config.spreadsheetName;
+  delete config.range;
+  delete config.keyColumn;
+  return prisma.integration.update({
+    where: { id },
+    data: {
+      credentials: encryptJSON(creds),
+      config: config as any,
+      status: "DISCONNECTED",
+      lastError: null,
+    },
+  });
+}
+
 // Create MetricDefinition rows from the connector's default metrics. Keys are
 // namespaced by integration id so connecting the same tool twice is safe.
 export async function seedDefaultMetrics(integration: Integration) {

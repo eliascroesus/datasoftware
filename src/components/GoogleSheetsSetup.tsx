@@ -35,7 +35,7 @@ export function GoogleSheetsSetup({
   onConfig: (patch: Record<string, any>) => void;
   onNeedIntegration: () => Promise<PublicIntegration | null>;
 }) {
-  const connected = !!integration?.oauth?.google;
+  const [connected, setConnected] = useState(!!integration?.oauth?.google);
   const id = integration?.id;
 
   const [query, setQuery] = useState("");
@@ -137,6 +137,24 @@ export function GoogleSheetsSetup({
     }
   }
 
+  async function disconnect() {
+    if (!id) return;
+    if (
+      !confirm(
+        "Disconnect this Google account? Your metrics stay, and you can reconnect a different account.",
+      )
+    )
+      return;
+    await fetch(`/api/integrations/${id}/google?action=disconnect`, {
+      method: "POST",
+    }).catch(() => {});
+    onConfig({ spreadsheetId: "", spreadsheetName: "", range: "", keyColumn: "" });
+    setSheets([]);
+    setTabs([]);
+    setColumns([]);
+    setConnected(false);
+  }
+
   function pickSheet(s: Sheet) {
     onConfig({ spreadsheetId: s.id, spreadsheetName: s.name, range: "", keyColumn: "" });
     setTabs([]);
@@ -179,9 +197,14 @@ export function GoogleSheetsSetup({
         <span className="flex items-center gap-1.5">
           <Check size={13} /> Google account connected
         </span>
-        <button onClick={signIn} className="text-good/80 hover:text-good underline">
-          Re-authenticate
-        </button>
+        <span className="flex items-center gap-3">
+          <button onClick={signIn} className="text-good/80 hover:text-good underline">
+            Switch account
+          </button>
+          <button onClick={disconnect} className="text-bad/80 hover:text-bad underline">
+            Disconnect
+          </button>
+        </span>
       </div>
 
       {err ? (

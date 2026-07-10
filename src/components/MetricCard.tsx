@@ -15,8 +15,8 @@ export function ChangePill({ change }: { change: number | null }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold",
-        up ? "bg-good/10 text-good" : "bg-bad/10 text-bad",
+        "inline-flex items-center gap-0.5 rounded-md border border-panel-border bg-bg-raise px-1.5 py-0.5 text-xs font-semibold",
+        up ? "text-white" : "text-zinc-400",
       )}
     >
       {up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}

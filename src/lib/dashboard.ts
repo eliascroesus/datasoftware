@@ -1,5 +1,10 @@
 import { prisma } from "./db";
-import { computeMetrics, type ComputedMetric } from "./metrics";
+import {
+  computeMetrics,
+  resolveRange,
+  type ComputedMetric,
+  type RangeKey,
+} from "./metrics";
 import { publicIntegration } from "./integrations";
 import type { Integration } from "@prisma/client";
 
@@ -18,7 +23,9 @@ export interface SummaryData {
   };
 }
 
-export async function getSummary(days = 14): Promise<SummaryData> {
+export async function getSummary(
+  range: RangeKey = "30d",
+): Promise<SummaryData> {
   const [integrations, defs, records, dataPoints] = await Promise.all([
     prisma.integration.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.metricDefinition.findMany({
@@ -35,7 +42,7 @@ export async function getSummary(days = 14): Promise<SummaryData> {
     where: { occurredAt: { gte: startOfToday } },
   });
 
-  const metrics = await computeMetrics(defs, { days });
+  const metrics = await computeMetrics(defs, resolveRange(range));
 
   const byIntegration: Record<string, ComputedMetric[]> = {};
   for (const m of metrics) {
