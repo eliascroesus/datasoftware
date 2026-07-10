@@ -1,6 +1,7 @@
 import { prisma } from "./db";
 import { encryptJSON, decryptJSON } from "./crypto";
 import { getConnector } from "./connectors";
+import { refreshAccessToken } from "./google";
 import type { Integration } from "@prisma/client";
 
 export interface IntegrationInput {
@@ -70,6 +71,39 @@ export async function updateIntegration(
 
 export async function deleteIntegration(id: string) {
   await prisma.integration.delete({ where: { id } });
+}
+
+// Merge a patch into the encrypted credentials blob (used by the Google OAuth
+// callback to store the refresh token without touching other fields).
+export async function setIntegrationCredentials(
+  id: string,
+  patch: Record<string, any>,
+) {
+  const existing = await prisma.integration.findUnique({ where: { id } });
+  if (!existing) throw new Error("Integration not found");
+  const current = decryptJSON<Record<string, any>>(existing.credentials) ?? {};
+  const merged = { ...current, ...patch };
+  return prisma.integration.update({
+    where: { id },
+    data: { credentials: encryptJSON(merged) },
+  });
+}
+
+// Decrypt an integration's Google refresh token and mint a fresh access token.
+export async function getGoogleAccessToken(id: string): Promise<string> {
+  const integration = await prisma.integration.findUnique({ where: { id } });
+  if (!integration) throw new Error("Integration not found");
+  const creds = decryptJSON<Record<string, any>>(integration.credentials) ?? {};
+  const refreshToken = creds.google_oauth?.refresh_token;
+  if (!refreshToken) {
+    throw new Error("This integration is not connected to Google. Sign in first.");
+  }
+  return refreshAccessToken(refreshToken);
+}
+
+export function hasGoogleOAuth(integration: Integration): boolean {
+  const creds = decryptJSON<Record<string, any>>(integration.credentials) ?? {};
+  return !!creds.google_oauth?.refresh_token;
 }
 
 // Create MetricDefinition rows from the connector's default metrics. Keys are
@@ -156,6 +190,7 @@ export function publicIntegration(i: Integration) {
     config: (i.config ?? {}) as Record<string, any>,
     webhookToken: i.webhookToken,
     hasCredentials: !!i.credentials,
+    oauth: { google: hasGoogleOAuth(i) },
     lastSyncedAt: i.lastSyncedAt,
     lastError: i.lastError,
     createdAt: i.createdAt,

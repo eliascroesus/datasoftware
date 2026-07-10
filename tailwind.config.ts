@@ -10,13 +10,13 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          DEFAULT: "#070b1a",
-          soft: "#0b1226",
-          raise: "#111a35",
+          DEFAULT: "#0a0a0e",
+          soft: "#0e0e13",
+          raise: "#15151b",
         },
         panel: {
-          DEFAULT: "rgba(19,28,56,0.72)",
-          border: "rgba(120,140,200,0.14)",
+          DEFAULT: "rgba(255,255,255,0.025)",
+          border: "rgba(255,255,255,0.09)",
         },
         brand: {
           DEFAULT: "#3d7dff",

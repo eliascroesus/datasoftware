@@ -78,9 +78,19 @@ database gets its tables on the **first deploy** — no manual schema step.
    | `CRON_SECRET` | ✅ | random string (`openssl rand -hex 24`) |
    | `NEXT_PUBLIC_APP_URL` | recommended | your production URL (e.g. `https://unived.vercel.app`) |
    | `AUTH_SECRET` | optional | signs the session cookie; defaults to `CREDENTIALS_SECRET` |
+   | `GOOGLE_CLIENT_ID` | optional | enables 1-click Google Sheets sign-in |
+   | `GOOGLE_CLIENT_SECRET` | optional | paired with the client id |
 
    > Without `AUTH_PASSWORD` the app is **publicly reachable** and shows a warning
    > banner. Set it to turn on the login wall.
+
+   **Google 1-click Sheets:** create an OAuth client at
+   [console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials)
+   (type *Web application*), enable the **Drive API** + **Sheets API**, and add
+   `<APP_URL>/api/oauth/google/callback` as an authorized redirect URI. Then set
+   `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. Users click **Sign in with
+   Google** and pick a spreadsheet → tab → columns — no keys to copy. Without
+   these, Google Sheets falls back to a service-account / API-key form.
 4. **Deploy.** On first build the schema is created automatically. Open the URL —
    you'll see the empty-state onboarding; head to **Integrations** to connect
    your first tool.

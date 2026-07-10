@@ -1,6 +1,7 @@
 import { listIntegrations, publicIntegration } from "@/lib/integrations";
 import { allConnectorMeta } from "@/lib/connectors";
 import { getAppUrl } from "@/lib/config";
+import { googleOAuthConfigured } from "@/lib/google";
 import { IntegrationsClient } from "./IntegrationsClient";
 
 export const runtime = "nodejs";
@@ -17,6 +18,7 @@ export default async function IntegrationsPage() {
       connectors={connectors}
       initialIntegrations={integrations.map(publicIntegration)}
       appUrl={getAppUrl()}
+      googleConfigured={googleOAuthConfigured()}
     />
   );
 }

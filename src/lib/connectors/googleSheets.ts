@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { apiFetch } from "./http";
+import { refreshAccessToken } from "../google";
 import type { Connector, ConnectorContext, SyncResult, VerifyResult } from "./types";
 
 const SHEETS_BASE = "https://sheets.googleapis.com/v4/spreadsheets";
@@ -67,9 +68,19 @@ async function readValues(ctx: ConnectorContext): Promise<string[][]> {
   const range = (ctx.config.range as string) || "Sheet1";
   if (!spreadsheetId) throw new Error("Spreadsheet ID is required.");
 
-  const sa = parseServiceAccount(ctx.credentials.serviceAccountJson);
   const url = `${SHEETS_BASE}/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}`;
 
+  // Preferred: OAuth (user signed in with Google).
+  const refreshToken = ctx.credentials.google_oauth?.refresh_token;
+  if (refreshToken) {
+    const token = await refreshAccessToken(refreshToken);
+    const res = await apiFetch<any>(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res?.values ?? [];
+  }
+
+  const sa = parseServiceAccount(ctx.credentials.serviceAccountJson);
   if (sa) {
     const token = await getAccessToken(sa);
     const res = await apiFetch<any>(url, {

@@ -89,7 +89,8 @@ export function MetricsClient({
   const [schema, setSchema] = useState<{
     kinds: string[];
     fieldsByKind: Record<string, string[]>;
-  }>({ kinds: [], fieldsByKind: {} });
+    examplesByKind: Record<string, Record<string, string>>;
+  }>({ kinds: [], fieldsByKind: {}, examplesByKind: {} });
   const [preview, setPreview] = useState<ComputedMetric | null>(null);
   const [previewErr, setPreviewErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -115,6 +116,22 @@ export function MetricsClient({
   }, [form.integrationId]);
 
   const availableFields = schema.fieldsByKind[form.recordKind] ?? [];
+  const availableExamples = schema.examplesByKind[form.recordKind] ?? {};
+
+  // Clicking a field from the live data maps it into the metric: as the value
+  // field for sum/avg/unique, or as a new filter rule otherwise.
+  function mapField(field: string) {
+    if (["sum", "avg", "unique"].includes(form.aggregation)) {
+      update({ valueField: field });
+    } else {
+      update({
+        filters: [
+          ...form.filters,
+          { field, op: "eq", value: availableExamples[field] ?? "" },
+        ],
+      });
+    }
+  }
 
   // Live preview (debounced).
   useEffect(() => {
@@ -550,6 +567,34 @@ export function MetricsClient({
             The preview reflects real data already stored. Save to pin it to your
             dashboard.
           </p>
+
+          {/* Zapier-style: map fields discovered from the latest data */}
+          {form.recordKind && Object.keys(availableExamples).length > 0 ? (
+            <div className="panel p-4">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-faint">
+                Fields from your data
+              </div>
+              <p className="mb-3 text-xs text-faint">
+                {["sum", "avg", "unique"].includes(form.aggregation)
+                  ? "Click a field to use it as the value."
+                  : "Click a field to add it as a filter rule."}
+              </p>
+              <div className="space-y-1">
+                {availableFields.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => mapField(f)}
+                    className="flex w-full items-center justify-between gap-3 rounded-md border border-panel-border bg-white/[0.02] px-2.5 py-1.5 text-left text-xs transition-colors hover:border-brand/40 hover:bg-white/[0.05]"
+                  >
+                    <span className="font-medium text-slate-200">{f}</span>
+                    <span className="max-w-[45%] truncate text-faint">
+                      {availableExamples[f] ?? ""}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 

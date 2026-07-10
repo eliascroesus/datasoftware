@@ -19,6 +19,8 @@ import { ProviderBadge } from "@/components/ProviderIcon";
 import { StatusPill } from "@/components/StatusPill";
 import { Field } from "@/components/Field";
 import { CopyButton } from "@/components/CopyButton";
+import { GoogleSheetsSetup } from "@/components/GoogleSheetsSetup";
+import { SampleData } from "@/components/SampleData";
 import { timeAgo, cn } from "@/lib/utils";
 import type { ConnectorMetaClient, PublicIntegration } from "@/lib/client-types";
 
@@ -34,12 +36,14 @@ function ConnectModal({
   connector,
   integration: initialIntegration,
   appUrl,
+  googleConfigured,
   onClose,
   onChanged,
 }: {
   connector: ConnectorMetaClient;
   integration: PublicIntegration | null;
   appUrl: string;
+  googleConfigured: boolean;
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -50,13 +54,35 @@ function ConnectModal({
     defaultsFor(connector, initialIntegration),
   );
   const [busy, setBusy] = useState<string | null>(null);
+  const [sampleKey, setSampleKey] = useState(0);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(
     null,
   );
 
+  // Google Sheets uses a dedicated OAuth + picker flow when configured.
+  const useGooglePicker =
+    connector.provider === "google_sheets" && googleConfigured;
+
   const webhookUrl = saved
     ? `${appUrl}/api/webhooks/${saved.webhookToken}`
     : null;
+
+  // Create an empty integration up-front so we have an id to attach Google
+  // OAuth to (used by the "Sign in with Google" button).
+  async function createEmpty(): Promise<PublicIntegration | null> {
+    const res = await fetch("/api/integrations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: connector.provider, name, config }),
+    });
+    const data = await res.json();
+    if (res.ok && data.integration) {
+      setSaved(data.integration);
+      onChanged();
+      return data.integration;
+    }
+    return null;
+  }
 
   async function connect() {
     setBusy("connect");
@@ -116,6 +142,7 @@ function ConnectModal({
         message: [test.message, syncMsg].filter(Boolean).join(" · "),
       });
       onChanged();
+      setSampleKey((k) => k + 1);
     } catch (e) {
       setResult({ ok: false, message: String(e) });
     } finally {
@@ -131,6 +158,7 @@ function ConnectModal({
     }).then((r) => r.json());
     setResult({ ok: res.ok, message: res.message });
     onChanged();
+    setSampleKey((k) => k + 1);
     setBusy(null);
   }
 
@@ -168,37 +196,52 @@ function ConnectModal({
             onChange={setName}
           />
 
-          {connector.credentialFields.length > 0 ? (
-            <div className="space-y-3">
-              <div className="text-xs font-semibold uppercase tracking-wider text-faint">
-                Credentials
-              </div>
-              {connector.credentialFields.map((f) => (
-                <Field
-                  key={f.key}
-                  field={f}
-                  value={creds[f.key]}
-                  onChange={(v) => setCreds((c) => ({ ...c, [f.key]: v }))}
-                  secretSaved={!!saved?.hasCredentials && f.secret}
-                />
-              ))}
-            </div>
-          ) : null}
+          {useGooglePicker ? (
+            <GoogleSheetsSetup
+              integration={saved}
+              config={config}
+              onConfig={(patch) => setConfig((c) => ({ ...c, ...patch }))}
+              onNeedIntegration={createEmpty}
+            />
+          ) : (
+            <>
+              {connector.credentialFields.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-faint">
+                    Credentials
+                  </div>
+                  {connector.credentialFields.map((f) => (
+                    <Field
+                      key={f.key}
+                      field={f}
+                      value={creds[f.key]}
+                      onChange={(v) => setCreds((c) => ({ ...c, [f.key]: v }))}
+                      secretSaved={!!saved?.hasCredentials && f.secret}
+                    />
+                  ))}
+                </div>
+              ) : null}
 
-          {connector.configFields.length > 0 ? (
-            <div className="space-y-3">
-              <div className="text-xs font-semibold uppercase tracking-wider text-faint">
-                Configuration
-              </div>
-              {connector.configFields.map((f) => (
-                <Field
-                  key={f.key}
-                  field={f}
-                  value={config[f.key]}
-                  onChange={(v) => setConfig((c) => ({ ...c, [f.key]: v }))}
-                />
-              ))}
-            </div>
+              {connector.configFields.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-faint">
+                    Configuration
+                  </div>
+                  {connector.configFields.map((f) => (
+                    <Field
+                      key={f.key}
+                      field={f}
+                      value={config[f.key]}
+                      onChange={(v) => setConfig((c) => ({ ...c, [f.key]: v }))}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </>
+          )}
+
+          {saved ? (
+            <SampleData integrationId={saved.id} refreshKey={sampleKey} />
           ) : null}
 
           {connector.supportsWebhook && webhookUrl ? (
@@ -287,10 +330,12 @@ export function IntegrationsClient({
   connectors,
   initialIntegrations,
   appUrl,
+  googleConfigured,
 }: {
   connectors: ConnectorMetaClient[];
   initialIntegrations: PublicIntegration[];
   appUrl: string;
+  googleConfigured: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -307,13 +352,29 @@ export function IntegrationsClient({
     router.refresh();
   }, [router]);
 
-  // Auto-open the connect modal from ?connect=provider
+  // Auto-open the connect modal from ?connect=provider (&id=… after OAuth).
   useEffect(() => {
-    const p = searchParams.get("connect");
-    if (p) {
-      const connector = connectors.find((c) => c.provider === p);
-      if (connector) setModal({ connector, integration: null });
+    const provider = searchParams.get("connect");
+    const id = searchParams.get("id");
+    if (!provider) return;
+    const connector = connectors.find((c) => c.provider === provider);
+    if (!connector) return;
+
+    if (id) {
+      // Returning from Google OAuth — reopen the modal for this integration.
+      fetch("/api/integrations")
+        .then((r) => r.json())
+        .then((data) => {
+          setIntegrations(data.integrations ?? []);
+          const found = (data.integrations ?? []).find((i: any) => i.id === id);
+          setModal({ connector, integration: found ?? null });
+        })
+        .catch(() => setModal({ connector, integration: null }));
+    } else {
+      setModal({ connector, integration: null });
     }
+    // clean the URL so a refresh doesn't reopen
+    window.history.replaceState(null, "", "/integrations");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -427,6 +488,7 @@ export function IntegrationsClient({
           connector={modal.connector}
           integration={modal.integration}
           appUrl={appUrl}
+          googleConfigured={googleConfigured}
           onClose={() => setModal(null)}
           onChanged={refresh}
         />

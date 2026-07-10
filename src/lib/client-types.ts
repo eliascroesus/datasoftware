@@ -8,6 +8,7 @@ export interface PublicIntegration {
   config: Record<string, any>;
   webhookToken: string;
   hasCredentials: boolean;
+  oauth?: { google: boolean };
   lastSyncedAt: string | Date | null;
   lastError: string | null;
   createdAt: string | Date;
