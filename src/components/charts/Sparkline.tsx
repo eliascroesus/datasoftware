@@ -15,7 +15,9 @@ export function Sparkline({
   strokeWidth?: number;
 }) {
   const hex = colorHex(color);
-  const id = `spark-${color}-${Math.round(Math.random() * 1e6)}`;
+  // Deterministic id (same on server + client) — duplicate identical gradient
+  // defs across cards are harmless and avoid hydration mismatches.
+  const id = `spark-grad-${color}`;
 
   if (!data || data.length === 0) {
     return <svg width={width} height={height} aria-hidden />;

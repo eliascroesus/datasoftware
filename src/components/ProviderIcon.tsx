@@ -24,13 +24,15 @@ export function ProviderIcon({
   provider,
   className,
   size = 18,
+  style,
 }: {
   provider: string;
   className?: string;
   size?: number;
+  style?: React.CSSProperties;
 }) {
   const Icon = ICONS[provider] ?? Boxes;
-  return <Icon size={size} className={className} />;
+  return <Icon size={size} className={className} style={style} />;
 }
 
 export function ProviderBadge({
@@ -43,21 +45,13 @@ export function ProviderBadge({
   const style = providerStyle(provider);
   return (
     <span
-      className={cn(
-        "flex shrink-0 items-center justify-center rounded-xl border",
-      )}
-      style={{
-        width: size,
-        height: size,
-        background: `linear-gradient(140deg, ${style.color}2e, ${style.color}0a)`,
-        borderColor: `${style.color}3a`,
-        boxShadow: `0 6px 18px -10px ${style.glow}`,
-      }}
+      className="flex shrink-0 items-center justify-center rounded-xl border border-panel-border bg-bg-raise"
+      style={{ width: size, height: size }}
     >
       <ProviderIcon
         provider={provider}
-        size={Math.round(size * 0.48)}
-        className="text-white"
+        size={Math.round(size * 0.5)}
+        style={{ color: style.color }}
       />
     </span>
   );

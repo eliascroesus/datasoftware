@@ -7,43 +7,35 @@ export interface ProviderStyle {
   glow: string;
 }
 
-// Monochrome provider styling — solid neutral surfaces, no color.
-const MONO: ProviderStyle = {
-  color: "#d4d4d8",
-  gradient: "from-zinc-700 to-transparent",
-  glow: "rgba(0,0,0,0.4)",
-  short: "",
-};
+// Colored provider identities (icons/badges), on the neutral dark chrome.
+function mk(color: string, short: string): ProviderStyle {
+  return { color, gradient: "", glow: `${color}55`, short };
+}
 
 export const PROVIDER_STYLE: Record<string, ProviderStyle> = {
-  close: { ...MONO, short: "Close" },
-  calendly: { ...MONO, short: "Calendly" },
-  sendblue: { ...MONO, short: "SendBlue" },
-  instantly: { ...MONO, short: "Instantly" },
-  google_sheets: { ...MONO, short: "Sheets" },
-  webhook: { ...MONO, short: "Webhook" },
+  close: mk("#22c55e", "Close"),
+  calendly: mk("#4f8bff", "Calendly"),
+  sendblue: mk("#8b7cff", "SendBlue"),
+  instantly: mk("#3b82f6", "Instantly"),
+  google_sheets: mk("#22c55e", "Sheets"),
+  webhook: mk("#f472b6", "Webhook"),
 };
 
 export function providerStyle(provider: string): ProviderStyle {
-  return (
-    PROVIDER_STYLE[provider] ?? {
-      ...MONO,
-      short: provider.slice(0, 2).toUpperCase(),
-    }
-  );
+  return PROVIDER_STYLE[provider] ?? mk("#8a8f9c", provider.slice(0, 2).toUpperCase());
 }
 
-// Chart colors — grayscale shades so series stay visually distinct in B&W.
+// Chart / accent colors used by sparklines, gauges and bars.
 export const COLOR_HEX: Record<string, string> = {
-  brand: "#e4e4e7",
-  teal: "#d4d4d8",
-  violet: "#a1a1aa",
-  amber: "#fafafa",
-  pink: "#c4c4c7",
-  good: "#e4e4e7",
-  bad: "#a1a1aa",
+  brand: "#4f8bff",
+  teal: "#2dd4bf",
+  violet: "#8b7cff",
+  amber: "#fbbf24",
+  pink: "#f472b6",
+  good: "#34d399",
+  bad: "#fb7185",
 };
 
 export function colorHex(token: string): string {
-  return COLOR_HEX[token] ?? token ?? "#e4e4e7";
+  return COLOR_HEX[token] ?? token ?? "#4f8bff";
 }

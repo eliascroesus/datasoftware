@@ -53,10 +53,23 @@ export async function apiFetch<T = any>(
 
     const text = await res.text();
     if (!res.ok) {
+      // Surface the provider's error detail so failures are debuggable in the UI.
+      let detail = "";
+      try {
+        const parsed = JSON.parse(text);
+        detail =
+          parsed.message ||
+          parsed.error ||
+          parsed.title ||
+          parsed.details?.[0]?.message ||
+          "";
+      } catch {
+        detail = text.slice(0, 160);
+      }
       throw new ConnectorHttpError(
         res.status,
         text.slice(0, 500),
-        `${method} ${finalUrl.pathname} → ${res.status} ${res.statusText}`,
+        `${method} ${finalUrl.pathname} → ${res.status} ${res.statusText}${detail ? ` — ${detail}` : ""}`,
       );
     }
     if (!text) return {} as T;

@@ -14,7 +14,7 @@ export function AreaChart({
   unit?: string;
 }) {
   const hex = colorHex(color);
-  const id = `area-${color}-${Math.round(Math.random() * 1e6)}`;
+  const id = `area-grad-${color}`;
   const width = 720;
   const padX = 8;
   const padTop = 16;

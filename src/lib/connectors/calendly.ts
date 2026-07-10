@@ -46,18 +46,26 @@ export const calendlyConnector: Connector = {
   async sync(ctx): Promise<SyncResult> {
     const headers = auth(ctx);
     const me = await apiFetch<any>(`${BASE}/users/me`, { headers });
-    const org: string = me?.resource?.current_organization;
-    const since = defaultSince(60);
+    const userUri: string = me?.resource?.uri;
+    if (!userUri) throw new Error("Could not resolve your Calendly user.");
+
+    // Bound the window so we capture recent + upcoming bookings.
+    const minStart = defaultSince(90).toISOString();
+    const maxStart = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 
     const events: any[] = [];
     let pageToken: string | undefined;
     for (let page = 0; page < 5; page++) {
+      // Scope by `user` (always available on a personal token) rather than
+      // `organization`, which can be undefined and trigger a 400.
       const res = await apiFetch<any>(`${BASE}/scheduled_events`, {
         headers,
         query: {
-          organization: org,
+          user: userUri,
           count: 100,
-          min_start_time: since.toISOString(),
+          sort: "start_time:desc",
+          min_start_time: minStart,
+          max_start_time: maxStart,
           page_token: pageToken,
         },
       });
