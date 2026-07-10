@@ -8,6 +8,8 @@ import { SESSION_COOKIE, verifySession, authEnabled } from "@/lib/auth";
 // - the health check
 const PUBLIC_PREFIXES = [
   "/login",
+  "/privacy",
+  "/terms",
   "/api/auth",
   "/api/webhooks",
   "/api/cron",

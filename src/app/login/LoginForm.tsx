@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Layers, Lock, ArrowRight, AlertTriangle } from "lucide-react";
+import { Footer } from "@/components/Footer";
 import { cn } from "@/lib/utils";
 
 export function LoginForm({ next }: { next: string }) {
@@ -84,6 +85,8 @@ export function LoginForm({ next }: { next: string }) {
             {!busy ? <ArrowRight size={16} /> : null}
           </button>
         </form>
+
+        <Footer className="mt-8" />
       </div>
     </div>
   );
