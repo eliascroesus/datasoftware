@@ -21,7 +21,7 @@ export function LoginForm({ next }: { next: string }) {
         body: JSON.stringify({ password }),
       });
       if (res.ok) {
-        window.location.href = next || "/";
+        window.location.href = next || "/dashboard";
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error ?? "Incorrect password.");
@@ -41,7 +41,7 @@ export function LoginForm({ next }: { next: string }) {
             <Layers className="text-white" />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-white">
-            Sign in to Unived
+            Sign in to NamziLabs
           </h1>
           <p className="mt-1 text-sm text-muted">
             Your unified data-tracking dashboard

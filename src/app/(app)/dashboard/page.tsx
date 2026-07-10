@@ -57,7 +57,7 @@ export default async function DashboardPage() {
           </h1>
           <p className="mx-auto mt-3 max-w-lg text-muted">
             Connect Close CRM, Calendly, SendBlue, Instantly, Google Sheets and
-            webhooks. Unived pulls everything into one place, timestamps it, and
+            webhooks. NamziLabs pulls everything into one place, timestamps it, and
             lets you build any metric you want.
           </p>
           <Link href="/integrations" className="btn-primary mx-auto mt-6 w-fit">

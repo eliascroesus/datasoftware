@@ -13,7 +13,7 @@ export default function NotFound() {
           That page doesn&apos;t exist or may have moved.
         </p>
         <Link href="/" className="btn-primary mx-auto mt-5">
-          Back to dashboard
+          Back to home
         </Link>
       </div>
     </div>

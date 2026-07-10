@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Unived — Unified Data Tracking",
+  title: "NamziLabs — Unified Data Tracking",
   description:
     "Connect Close CRM, Calendly, SendBlue, Instantly, Google Sheets and webhooks into one live dashboard.",
   robots: { index: false, follow: false },

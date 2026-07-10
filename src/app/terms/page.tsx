@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { LegalShell, H2, P, UL } from "@/components/LegalShell";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Unived by NamziLabs",
-  description: "The terms that govern your use of Unived.",
+  title: "Terms of Service — NamziLabs",
+  description: "The terms that govern your use of NamziLabs.",
   robots: { index: true, follow: true },
 };
 
@@ -14,7 +14,7 @@ export default function TermsPage() {
   return (
     <LegalShell title="Terms of Service" updated={UPDATED}>
       <P>
-        These Terms of Service (“Terms”) govern your access to and use of Unived
+        These Terms of Service (“Terms”) govern your access to and use of NamziLabs
         (the “Service”), operated by NamziLabs (“we”, “us”, “our”). By accessing
         or using the Service, you agree to these Terms. If you do not agree, do
         not use the Service.
@@ -22,7 +22,7 @@ export default function TermsPage() {
 
       <H2>1. The Service</H2>
       <P>
-        Unived is a unified data-tracking dashboard that connects to third-party
+        NamziLabs is a unified data-tracking dashboard that connects to third-party
         tools you authorize — such as Google Sheets, Close CRM, Calendly,
         SendBlue, Instantly and inbound webhooks — and consolidates their data
         into metrics and dashboards you configure.

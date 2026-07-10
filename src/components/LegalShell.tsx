@@ -21,7 +21,7 @@ export function LegalShell({
               <Layers size={17} className="text-white" />
             </div>
             <span className="text-[15px] font-bold tracking-tight text-white">
-              Unived
+              NamziLabs
             </span>
           </Link>
           <nav className="flex items-center gap-4 text-sm text-muted">

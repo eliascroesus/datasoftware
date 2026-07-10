@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { LegalShell, H2, P, UL } from "@/components/LegalShell";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Unived by NamziLabs",
-  description: "How Unived collects, uses, stores and protects your data.",
+  title: "Privacy Policy — NamziLabs",
+  description: "How NamziLabs collects, uses, stores and protects your data.",
   robots: { index: true, follow: true },
 };
 
@@ -15,7 +15,7 @@ export default function PrivacyPage() {
     <LegalShell title="Privacy Policy" updated={UPDATED}>
       <P>
         This Privacy Policy explains how NamziLabs (“we”, “us”, “our”) collects,
-        uses, stores, shares and protects information in connection with Unived
+        uses, stores, shares and protects information in connection with NamziLabs
         (the “Service”), a unified data-tracking dashboard that pulls data from
         the tools you connect — such as Google Sheets, Close CRM, Calendly,
         SendBlue, Instantly and inbound webhooks — into one place. By using the
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
 
       <H2>Google API Services — Limited Use</H2>
       <P>
-        Unived&apos;s use and transfer of information received from Google APIs
+        NamziLabs&apos;s use and transfer of information received from Google APIs
         will adhere to the{" "}
         <a
           href="https://developers.google.com/terms/api-services-user-data-policy"
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
         </a>
         , including its Limited Use requirements. Specifically, data obtained from
         Google APIs is used only to provide and improve user-facing features of
-        Unived that are prominent in the interface; is not transferred to others
+        NamziLabs that are prominent in the interface; is not transferred to others
         except as necessary to provide those features, to comply with applicable
         law, or as part of a merger or acquisition; is not used or transferred for
         advertising; and is not used to train generalized AI/ML models. Humans do
@@ -167,7 +167,7 @@ export default function PrivacyPage() {
 
       <H2>Children</H2>
       <P>
-        Unived is a business tool not directed to children and is not intended for
+        NamziLabs is a business tool not directed to children and is not intended for
         anyone under 16. We do not knowingly collect data from children.
       </P>
 

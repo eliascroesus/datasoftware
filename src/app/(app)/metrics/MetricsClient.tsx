@@ -11,9 +11,12 @@ import {
   Save,
   X,
   Sparkles,
+  RefreshCw,
+  Database,
 } from "lucide-react";
 import { MetricCard } from "@/components/MetricCard";
 import { ProviderBadge } from "@/components/ProviderIcon";
+import { Combobox } from "@/components/Combobox";
 import type { ComputedMetric } from "@/lib/metrics";
 import type { MetricDef, PublicIntegration } from "@/lib/client-types";
 import { cn } from "@/lib/utils";
@@ -90,33 +93,49 @@ export function MetricsClient({
     kinds: string[];
     fieldsByKind: Record<string, string[]>;
     examplesByKind: Record<string, Record<string, string>>;
-  }>({ kinds: [], fieldsByKind: {}, examplesByKind: {} });
+    valuesByKind: Record<string, Record<string, string[]>>;
+  }>({ kinds: [], fieldsByKind: {}, examplesByKind: {}, valuesByKind: {} });
   const [preview, setPreview] = useState<ComputedMetric | null>(null);
   const [previewErr, setPreviewErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loadingSchema, setLoadingSchema] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout>>();
 
   const update = (patch: Partial<FormState>) =>
     setForm((f) => ({ ...f, ...patch }));
 
-  // Load schema (kinds + fields) whenever the source changes.
-  useEffect(() => {
-    const qs = form.integrationId ? `?integrationId=${form.integrationId}` : "";
-    fetch(`/api/schema${qs}`)
-      .then((r) => r.json())
-      .then((d) => {
+  // Load schema (kinds + fields + sample values) for the selected source.
+  const loadSchema = useCallback(
+    async (integrationId: string, autopickKind = true) => {
+      setLoadingSchema(true);
+      try {
+        const qs = integrationId ? `?integrationId=${integrationId}` : "";
+        const d = await fetch(`/api/schema${qs}`).then((r) => r.json());
         setSchema(d);
-        setForm((f) =>
-          f.recordKind || d.kinds.length === 0
-            ? f
-            : { ...f, recordKind: d.kinds[0] },
-        );
-      })
-      .catch(() => {});
+        if (autopickKind) {
+          setForm((f) =>
+            f.recordKind || d.kinds.length === 0
+              ? f
+              : { ...f, recordKind: d.kinds[0] },
+          );
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        setLoadingSchema(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    loadSchema(form.integrationId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.integrationId]);
 
   const availableFields = schema.fieldsByKind[form.recordKind] ?? [];
   const availableExamples = schema.examplesByKind[form.recordKind] ?? {};
+  const availableValues = schema.valuesByKind[form.recordKind] ?? {};
 
   // Clicking a field from the live data maps it into the metric: as the value
   // field for sum/avg/unique, or as a new filter rule otherwise.
@@ -328,18 +347,12 @@ export function MetricsClient({
               <span className="mb-1.5 block text-sm font-medium text-slate-200">
                 Track (record type)
               </span>
-              <input
-                className="input"
-                list="kinds-list"
-                placeholder="e.g. sheet_row, booking, sms"
+              <Combobox
                 value={form.recordKind}
-                onChange={(e) => update({ recordKind: e.target.value })}
+                onChange={(v) => update({ recordKind: v })}
+                options={schema.kinds}
+                placeholder="e.g. sheet_row, booking, sms"
               />
-              <datalist id="kinds-list">
-                {schema.kinds.map((k) => (
-                  <option key={k} value={k} />
-                ))}
-              </datalist>
             </label>
           </div>
 
@@ -366,12 +379,12 @@ export function MetricsClient({
                 <span className="mb-1.5 block text-sm font-medium text-slate-200">
                   Field / column
                 </span>
-                <input
-                  className="input"
-                  list="fields-list"
-                  placeholder="e.g. Amount, Email"
+                <Combobox
                   value={form.valueField}
-                  onChange={(e) => update({ valueField: e.target.value })}
+                  onChange={(v) => update({ valueField: v })}
+                  options={availableFields}
+                  hints={availableExamples}
+                  placeholder="e.g. Amount, Email"
                 />
               </label>
             ) : (
@@ -392,12 +405,6 @@ export function MetricsClient({
               </label>
             )}
           </div>
-
-          <datalist id="fields-list">
-            {availableFields.map((f) => (
-              <option key={f} value={f} />
-            ))}
-          </datalist>
 
           {/* Filters */}
           <div>
@@ -427,16 +434,17 @@ export function MetricsClient({
               <div className="space-y-2">
                 {form.filters.map((row, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <input
-                      className="input flex-1"
-                      list="fields-list"
-                      placeholder="field"
+                    <Combobox
+                      className="flex-1"
                       value={row.field}
-                      onChange={(e) => {
+                      onChange={(v) => {
                         const filters = [...form.filters];
-                        filters[idx] = { ...row, field: e.target.value };
+                        filters[idx] = { ...row, field: v };
                         update({ filters });
                       }}
+                      options={availableFields}
+                      hints={availableExamples}
+                      placeholder="field"
                     />
                     <select
                       className="input w-32 shrink-0"
@@ -454,15 +462,16 @@ export function MetricsClient({
                       ))}
                     </select>
                     {!NO_VALUE_OPS.has(row.op) ? (
-                      <input
-                        className="input flex-1"
-                        placeholder="value"
+                      <Combobox
+                        className="flex-1"
                         value={row.value ?? ""}
-                        onChange={(e) => {
+                        onChange={(v) => {
                           const filters = [...form.filters];
-                          filters[idx] = { ...row, value: e.target.value };
+                          filters[idx] = { ...row, value: v };
                           update({ filters });
                         }}
+                        options={availableValues[row.field] ?? []}
+                        placeholder="value"
                       />
                     ) : (
                       <div className="flex-1" />
@@ -568,31 +577,61 @@ export function MetricsClient({
             dashboard.
           </p>
 
-          {/* Zapier-style: map fields discovered from the latest data */}
-          {form.recordKind && Object.keys(availableExamples).length > 0 ? (
+          {/* Zapier-style test data: real sample fields + values, click to map */}
+          {form.recordKind ? (
             <div className="panel p-4">
-              <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-faint">
-                Fields from your data
+              <div className="mb-1 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-faint">
+                  <Database size={13} /> Sample data
+                </div>
+                <button
+                  onClick={() => loadSchema(form.integrationId, false)}
+                  className="btn-ghost px-2 py-1 text-[11px]"
+                  disabled={loadingSchema}
+                >
+                  <RefreshCw
+                    size={12}
+                    className={cn(loadingSchema && "animate-spin")}
+                  />
+                  Pull latest
+                </button>
               </div>
-              <p className="mb-3 text-xs text-faint">
-                {["sum", "avg", "unique"].includes(form.aggregation)
-                  ? "Click a field to use it as the value."
-                  : "Click a field to add it as a filter rule."}
-              </p>
-              <div className="space-y-1">
-                {availableFields.map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => mapField(f)}
-                    className="flex w-full items-center justify-between gap-3 rounded-md border border-panel-border bg-white/[0.02] px-2.5 py-1.5 text-left text-xs transition-colors hover:border-brand/40 hover:bg-white/[0.05]"
-                  >
-                    <span className="font-medium text-slate-200">{f}</span>
-                    <span className="max-w-[45%] truncate text-faint">
-                      {availableExamples[f] ?? ""}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              {availableFields.length === 0 ? (
+                <p className="py-3 text-xs text-faint">
+                  {loadingSchema
+                    ? "Loading sample…"
+                    : "No data yet. Connect and sync this source, then pull the latest sample."}
+                </p>
+              ) : (
+                <>
+                  <p className="mb-3 text-xs text-faint">
+                    Pulled from your latest records —{" "}
+                    {["sum", "avg", "unique"].includes(form.aggregation)
+                      ? "click a field to use it as the value."
+                      : "click a field to add it as a filter."}
+                  </p>
+                  <div className="space-y-1">
+                    {availableFields.map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => mapField(f)}
+                        className="group flex w-full items-center justify-between gap-3 rounded-md border border-panel-border bg-white/[0.02] px-2.5 py-1.5 text-left text-xs transition-colors hover:border-brand/40 hover:bg-white/[0.05]"
+                      >
+                        <span className="flex items-center gap-1.5 font-medium text-slate-200">
+                          <Plus
+                            size={11}
+                            className="text-faint group-hover:text-brand-soft"
+                          />
+                          {f}
+                        </span>
+                        <span className="max-w-[45%] truncate text-faint">
+                          {availableExamples[f] ?? "—"}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           ) : null}
         </div>

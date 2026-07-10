@@ -1,8 +1,20 @@
 import type { MetadataRoute } from "next";
 
-// Private app — keep it out of search engines.
+// Public marketing pages are indexable; the authenticated app is not.
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: { userAgent: "*", disallow: "/" },
+    rules: {
+      userAgent: "*",
+      allow: "/",
+      disallow: [
+        "/dashboard",
+        "/integrations",
+        "/metrics",
+        "/activity",
+        "/sources",
+        "/login",
+        "/api/",
+      ],
+    },
   };
 }

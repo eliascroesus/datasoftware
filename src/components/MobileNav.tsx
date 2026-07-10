@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/", label: "Summary", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Summary", icon: LayoutDashboard },
   { href: "/integrations", label: "Integrations", icon: Cable },
   { href: "/metrics", label: "Metrics", icon: SlidersHorizontal },
   { href: "/activity", label: "Activity", icon: Activity },
@@ -26,12 +26,14 @@ export function MobileNav() {
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-accent-teal">
           <Layers size={15} className="text-white" />
         </div>
-        <span className="font-bold text-white">Unived</span>
+        <span className="font-bold text-white">NamziLabs</span>
       </div>
       <div className="flex gap-1 overflow-x-auto px-3 pb-2">
         {NAV.map((item) => {
           const active =
-            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            item.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname.startsWith(item.href);
           const Icon = item.icon;
           return (
             <Link

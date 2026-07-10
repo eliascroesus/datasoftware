@@ -20,6 +20,8 @@ export async function middleware(req: NextRequest) {
   if (!authEnabled()) return NextResponse.next();
 
   const { pathname } = req.nextUrl;
+  // Public marketing homepage (exact match) — the app lives at /dashboard.
+  if (pathname === "/") return NextResponse.next();
   if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }

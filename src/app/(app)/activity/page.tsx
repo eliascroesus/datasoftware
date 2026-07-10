@@ -31,7 +31,7 @@ export default async function ActivityPage() {
           Activity feed
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Every record pulled or pushed into Unived, newest first — fully
+          Every record pulled or pushed into NamziLabs, newest first — fully
           timestamped across all your sources.
         </p>
       </header>

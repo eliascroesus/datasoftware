@@ -11,10 +11,10 @@ export default async function LoginPage({
   searchParams: { next?: string };
 }) {
   // If login is disabled, there's nothing to log into.
-  if (!authEnabled()) redirect("/");
+  if (!authEnabled()) redirect("/dashboard");
 
   const token = cookies().get(SESSION_COOKIE)?.value;
-  if (await verifySession(token)) redirect(searchParams.next || "/");
+  if (await verifySession(token)) redirect(searchParams.next || "/dashboard");
 
-  return <LoginForm next={searchParams.next || "/"} />;
+  return <LoginForm next={searchParams.next || "/dashboard"} />;
 }

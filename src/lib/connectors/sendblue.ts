@@ -48,7 +48,7 @@ export const sendblueConnector: Connector = {
     return {
       ok: true,
       message:
-        "Credentials stored. SendBlue is webhook-driven — point SendBlue webhooks at your Unived URL below.",
+        "Credentials stored. SendBlue is webhook-driven — point SendBlue webhooks at your NamziLabs URL below.",
       accountLabel: "SendBlue (webhook)",
     };
   },

@@ -411,7 +411,7 @@ export function IntegrationsClient({
           Integrations
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Connect your tools once. Unived pulls data on a schedule and via
+          Connect your tools once. NamziLabs pulls data on a schedule and via
           webhooks, then unifies it on your dashboard.
         </p>
       </header>

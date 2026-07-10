@@ -25,7 +25,7 @@ interface SourceLite {
 }
 
 const NAV = [
-  { href: "/", label: "Summary", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Summary", icon: LayoutDashboard },
   { href: "/integrations", label: "Integrations", icon: Cable },
   { href: "/metrics", label: "Metrics builder", icon: SlidersHorizontal },
   { href: "/activity", label: "Activity feed", icon: Activity },
@@ -61,7 +61,7 @@ export function Sidebar({ showSignOut = false }: { showSignOut?: boolean }) {
         </div>
         <div className="leading-tight">
           <div className="text-[15px] font-bold tracking-tight text-white">
-            Unived
+            NamziLabs
           </div>
           <div className="text-[10px] uppercase tracking-[0.18em] text-faint">
             data platform
@@ -72,8 +72,8 @@ export function Sidebar({ showSignOut = false }: { showSignOut?: boolean }) {
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
         {NAV.map((item) => {
           const active =
-            item.href === "/"
-              ? pathname === "/"
+            item.href === "/dashboard"
+              ? pathname === "/dashboard"
               : pathname.startsWith(item.href);
           const Icon = item.icon;
           return (
